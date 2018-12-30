@@ -8,18 +8,6 @@ def read_round(sentence):
     for x in sentence:
         print(x)
 
-def get_agent1(sentence):
-    #util of fruit
-    print(sentence[1])
-
-    #util of juice
-
-
-    #util of topping1
-
-    #util of topping2
-    #print(sentence)
-
 def get_fruit_weight(sentence):
     weight_val = 0;
     for key2 in sentence.keys():
@@ -89,7 +77,7 @@ def cal_util(sentence,sentence2,fruit_list,juice_list,topping1_list,topping2_lis
             util = fru_util + jui_util + top1_util + top2_util
             print("the round of util is:",util);
 
-
+def 
 
 
 
