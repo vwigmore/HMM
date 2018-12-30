@@ -4,6 +4,9 @@ import json
 import ast
 from seqlearn.datasets import load_conll
 
+
+
+
 def read_round(sentence):
     for x in sentence:
         print(x)
@@ -78,56 +81,53 @@ def cal_util(sentence,sentence2,fruit_list,juice_list,topping1_list,topping2_lis
             print("the round of util is:",util);
 
 
+def read_json_file(file_path,util1_list,round_list):
 
 
-files = open("E:\TUDelft\FirstQuarter\AI\project2\conceder_conceder.json", "r")
-f2 = files.read()
-loaded_json = json.loads(f2)
-# a = ast.literal_eval(loaded_json)
-# print(type(loaded_json))
-# print(loaded_json)
-# for key in loaded_json.keys():
-issues_str = loaded_json['issues']
-utility2_str = loaded_json['Utility2']
-Utility1_str = loaded_json['Utility1']
-bids_str = loaded_json['bids']
-round_list = list()
-fruit_list = list()
-juice_list = list()
-util1_list = list()
-util2_list = list()
-topping1_list = list()
-topping2_list = list()
-
-for key in issues_str.keys():
-    if key == 'Fruit':
-        Fruit_str = issues_str[key]
-        fruit_list = Fruit_str
-    if key == 'Juice':
-        Juice_str = issues_str[key]
-        juice_list = Juice_str
-    if key == 'Topping1':
-        topping1_str = issues_str[key]
-        topping1_list = topping1_str
-    if key == 'Topping2':
-        topping2_str = issues_str[key]
-        topping2_list = topping2_str
-
-for key3 in Utility1_str.keys():
-    c_str = Utility1_str[key3]
-    util1_list.append(key3)
-    util1_list.append(c_str)
-
-for key4 in bids_str:
-    d_str = key4
-    round_list.append(d_str)
-
-#print(get_fruit_weight(utility2_str))
-#get_juice_weight(Utility2_str)
-#get_Topping1_weight(Utility2_str)
-#get_Topping2_weight(Utility2_str)
+    files = open(file_path, "r")
+    f2 = files.read()
+    loaded_json = json.loads(f2)
+    issues_str = loaded_json['issues']
+    utility2_str = loaded_json['Utility2']
+    Utility1_str = loaded_json['Utility1']
+    bids_str = loaded_json['bids']
 
 
-cal_util(round_list,utility2_str,fruit_list,juice_list,topping1_list,topping2_list);
+    for key in issues_str.keys():
+        if key == 'Fruit':
+            Fruit_str = issues_str[key]
+            fruit_list = Fruit_str
+        if key == 'Juice':
+            Juice_str = issues_str[key]
+            juice_list = Juice_str
+        if key == 'Topping1':
+            topping1_str = issues_str[key]
+            topping1_list = topping1_str
+        if key == 'Topping2':
+            topping2_str = issues_str[key]
+            topping2_list = topping2_str
+
+    for key3 in Utility1_str.keys():
+        c_str = Utility1_str[key3]
+        util1_list.append(key3)
+        util1_list.append(c_str)
+
+    for key4 in bids_str:
+        d_str = key4
+        round_list.append(d_str)
+
+
+    cal_util(round_list,utility2_str,fruit_list,juice_list,topping1_list,topping2_list);
+
+def main():
+    round_list = list()
+    fruit_list = list()
+    juice_list = list()
+    util1_list = list()
+    util2_list = list()
+    topping1_list = list()
+    topping2_list = list()
+    read_json_file("E:\TUDelft\FirstQuarter\AI\project2\conceder_conceder.json",util1_list,round_list)
+
 
 
