@@ -81,9 +81,9 @@ def cal_util(sentence,sentence2,fruit_list,juice_list,topping1_list,topping2_lis
                     fru_util = get_fruit_weight(sentence2);
                 if val in juice_list and val is not None:
                     jui_util = get_juice_weight(sentence2);
-                if val in topping1_list and val is not None:
+                if val in topping1_list and val!='None':
                     top1_util = get_Topping1_weight(sentence2);
-                if val in topping2_list and val is not None:
+                if val in topping2_list and val!='None':
                     top2_util = get_Topping2_weight(sentence2)
 
             util = fru_util + jui_util + top1_util + top2_util
