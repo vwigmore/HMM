@@ -77,9 +77,9 @@ def cal_util(sentence,sentence2,fruit_list,juice_list,topping1_list,topping2_lis
             top1_util = 0;
             top2_util = 0;
             for val in agent1_list:
-                if val in fruit_list and (val is not None):
+                if val in fruit_list and val!='None':
                     fru_util = get_fruit_weight(sentence2);
-                if val in juice_list and val is not None:
+                if val in juice_list and val!='None':
                     jui_util = get_juice_weight(sentence2);
                 if val in topping1_list and val!='None':
                     top1_util = get_Topping1_weight(sentence2);
@@ -88,6 +88,8 @@ def cal_util(sentence,sentence2,fruit_list,juice_list,topping1_list,topping2_lis
 
             util = fru_util + jui_util + top1_util + top2_util
             print("the round of util is:",util);
+
+
 
 
 
@@ -137,6 +139,7 @@ for key4 in bids_str:
 #get_juice_weight(Utility2_str)
 #get_Topping1_weight(Utility2_str)
 #get_Topping2_weight(Utility2_str)
+
 
 cal_util(round_list,utility2_str,fruit_list,juice_list,topping1_list,topping2_list);
 
