@@ -77,7 +77,6 @@ def cal_util(sentence,sentence2,fruit_list,juice_list,topping1_list,topping2_lis
             util = fru_util + jui_util + top1_util + top2_util
             print("the round of util is:",util);
 
-def 
 
 
 
