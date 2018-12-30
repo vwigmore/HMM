@@ -83,7 +83,6 @@ def cal_util(sentence,sentence2,fruit_list,juice_list,topping1_list,topping2_lis
 
 def read_json_file(file_path,util1_list,round_list):
 
-
     files = open(file_path, "r")
     f2 = files.read()
     loaded_json = json.loads(f2)
@@ -116,7 +115,6 @@ def read_json_file(file_path,util1_list,round_list):
         d_str = key4
         round_list.append(d_str)
 
-
     cal_util(round_list,utility2_str,fruit_list,juice_list,topping1_list,topping2_list);
 
 def main():
@@ -128,6 +126,8 @@ def main():
     topping1_list = list()
     topping2_list = list()
     read_json_file("E:\TUDelft\FirstQuarter\AI\project2\conceder_conceder.json",util1_list,round_list)
+
+main()
 
 
 
