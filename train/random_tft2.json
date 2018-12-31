@@ -302,7 +302,8 @@
 		},
 		{
 			"round": "40",
-			"agent1": "Strawberry,Water,Almonds,Almonds"
+			"agent1": "Strawberry,Water,Almonds,Almonds",
+			"agent2": "Strawberry,Yoghurt,Almonds,Chocolate"
 		},
 		{
 			"round": "41",
