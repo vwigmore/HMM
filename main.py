@@ -96,6 +96,7 @@ def main():
 		print(X)
 		print(y)
 
+		global hmm
 		# Normalize
 
 		# Input into HMM
@@ -103,4 +104,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+	main()
+	print(hmm.coef_)
