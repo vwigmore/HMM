@@ -2,9 +2,13 @@ import json
 import numpy as np
 from UtilityFunction import *
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from ExtHMM import *
+import os
 
 # Hardcoded set of possible strategy labels
 labels = ["conceder", "random", "hardheaded", "tft"]
+hmm = ExtHMM()
+
 
 # Method to parse the file name to get the agent strategy labels
 def parseAgentLabels(file_name):
@@ -83,14 +87,20 @@ def setupIssues(issues):
 	return categories
 
 def main():
-   (X, y) = loadTrainingData("train/conceder_conceder.json")
-   #Use one hot encoder
-   print(X)
-   print(y)
-   #Normalize
-   
-   #Input into HMM
-   
+	path = "train/"
+	files = os.listdir(path)
+	for file in files:
+		print(path + file)
+		(X, y) = loadTrainingData(path + file)
+		# Use one hot encoder
+		print(X)
+		print(y)
+
+		# Normalize
+
+		# Input into HMM
+		hmm.fit(X, y, len(y))
+
 
 if __name__ == "__main__":
     main()
