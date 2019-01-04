@@ -9,3 +9,5 @@ __pycache__/
 *.so
 *~
 .pypirc
+intermediate/*
+!intermediate/empty.txt

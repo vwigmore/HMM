@@ -22,10 +22,9 @@ def normalizeUtilityFunction(utility_function):
 # Method computes the utility, assuming the issues are ordered alphabetically
 def computeUtility(bid, utility_function):
 	utility = 0.0
-
 	for index, key in enumerate(sorted(utility_function.keys())):
 		issue = utility_function[key]
-		discrete_value = bid[index] 
+		discrete_value = bid[index]
 		utility += issue["weight"] * issue[discrete_value]
 	return utility
 			

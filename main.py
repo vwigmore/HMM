@@ -1,13 +1,15 @@
 import json
+import sys
 import numpy as np
 import glob, os
-from ExtHMM import ExtHMM
+import csv
+from ExHMM import ExHMM
 from UtilityFunction import *
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-
+from EasyBid import *
 
 # Hardcoded set of possible strategy labels
 labels = ["conceder", "random", "hardheaded", "tft"]
+
 
 # Method to parse the file name to get the agent strategy labels
 def parseAgentLabels(file_name):
@@ -21,8 +23,67 @@ def parseAgentLabels(file_name):
 			agent2_label = label
 	return (agent1_label, agent2_label)
 
-def loadTestData(file_name):
 
+def loadData(dir_name, remove_file=None):
+	files = []
+	for f in os.listdir(dir_name):
+		files.append(dir_name + "/" + f)
+	if remove_file:
+		files.remove(remove_file)
+	X0 = []
+	X1 = []
+	X2 = []
+	X3 = []
+
+	for f in files:
+		(agent1_label, agent2_label) = parseAgentLabels(f)
+		# Read the JSON file
+		with open(f, "r") as file:
+			data = json.load(file)
+			num_bids = len(data['bids'])
+
+			# Normalizing utility function from JSON
+			utility1 = data['Utility1']
+			utility2 = data['Utility2']
+
+			# Set up data structures to store the features in
+			# Last bid is the accept or end of negotiation
+			agent1_strat_utilities = np.empty((num_bids - 1, 2))
+			agent2_strat_utilities = np.empty((num_bids - 1, 2))
+
+			for index, bid in enumerate(data['bids']):
+				if index >= num_bids - 1:
+					break
+				agent1_bid = bid['agent1'].split(',')
+				agent1_strat_utilities[index, 0] = computeUtility(agent1_bid, utility1)
+				agent1_strat_utilities[index, 1] = computeUtility(agent1_bid, utility2)
+
+				agent2_bid = bid['agent2'].split(',')
+				agent2_strat_utilities[index, 0] = computeUtility(agent2_bid, utility2)
+				agent2_strat_utilities[index, 1] = computeUtility(agent2_bid, utility1)
+
+			if agent1_label == labels[0]:
+				X0.extend([simplifyBids(agent1_strat_utilities)])
+			elif agent1_label == labels[1]:
+				X1.extend([simplifyBids(agent1_strat_utilities)])
+			elif agent1_label == labels[2]:
+				X2.extend([simplifyBids(agent1_strat_utilities)])
+			else:
+				X3.extend([simplifyBids(agent1_strat_utilities)])
+
+			if agent2_label == labels[0]:
+				X0.extend([simplifyBids(agent1_strat_utilities)])
+			elif agent2_label == labels[1]:
+				X1.extend([simplifyBids(agent1_strat_utilities)])
+			elif agent2_label == labels[2]:
+				X2.extend([simplifyBids(agent1_strat_utilities)])
+			else:
+				X3.extend([simplifyBids(agent1_strat_utilities)])
+
+	return X0, X1, X2, X3
+
+
+def testData(file_name):
 	with open(file_name, "r") as file:
 		data = json.load(file)
 		num_bids = len(data['bids'])
@@ -30,15 +91,13 @@ def loadTestData(file_name):
 		issues = setupIssues(data['issues'])
 
 		# Normalizing utility function from JSON
-		utility1 = normalizeUtilityFunction(data['Utility1'])
-		utility2 = normalizeUtilityFunction(data['Utility2'])
+		utility1 = data['Utility1']
+		utility2 = data['Utility2']
 
 		# Set up data structures to store the features in
 		# Last bid is the accept or end of negotiation
 		agent1_strat_utilities = np.empty((num_bids - 1, 2))
-		agent1_strat_bids = np.empty((num_bids - 1, num_issues), dtype=object)
 		agent2_strat_utilities = np.empty((num_bids - 1, 2))
-		agent2_strat_bids = np.empty((num_bids - 1, num_issues), dtype=object)
 
 		for index, bid in enumerate(data['bids']):
 			if index >= num_bids - 1:
@@ -46,154 +105,252 @@ def loadTestData(file_name):
 			agent1_bid = bid['agent1'].split(',')
 			agent1_strat_utilities[index, 0] = computeUtility(agent1_bid, utility1)
 			agent1_strat_utilities[index, 1] = computeUtility(agent1_bid, utility2)
-			agent1_strat_bids[index, :] = agent1_bid
 
 			agent2_bid = bid['agent2'].split(',')
 			agent2_strat_utilities[index, 0] = computeUtility(agent2_bid, utility2)
 			agent2_strat_utilities[index, 1] = computeUtility(agent2_bid, utility1)
-			agent2_strat_bids[index, :] = agent2_bid
 
-		# One hot encode the categorical bids
-		X_bids = np.append(agent1_strat_bids, agent2_strat_bids, axis=0)
-		one_hot_enc = OneHotEncoder(categories=issues)
-		X_bids = one_hot_enc.fit_transform(X_bids).toarray()
+		A1 = simplifyBids(agent1_strat_utilities)
+		A2 = simplifyBids(agent2_strat_utilities)
+		return A1, A2
 
-		# Append the feature matrices
-		X = np.append(agent1_strat_utilities, agent2_strat_utilities, axis=0)
-		X = np.append(X, X_bids, axis=1)
-
-		return (X, [index, index])
-
-
-# features X: own utility, opponent utility, chosen discrete values 
-# y labels categorically encoded
-def loadTrainingData(dir_name, remove_file=None):
-
-	# os.chdir("~./"+dir_name)
-	files = []
-	for f in glob.glob("*.json"):
-		files.append(f)
-	if remove_file:
-		files.remove(remove_file)
-
-	# initiate arrays
-	X_bids = []
-	X = []
-	y = []
-	lengths = []
-	for f in files:
-		(agent1_label, agent2_label) = parseAgentLabels(f)
-		# Read the JSON file
-		with open(f, "r") as file:
-			data = json.load(file)
-			num_bids = len(data['bids'])
-			num_issues = len(data['issues'])
-			issues = setupIssues(data['issues'])
-		
-			# Normalizing utility function from JSON
-			utility1 = normalizeUtilityFunction(data['Utility1'])
-			utility2 = normalizeUtilityFunction(data['Utility2'])
-		
-			# Set up data structures to store the features in
-			# Last bid is the accept or end of negotiation
-			agent1_strat_utilities = np.empty((num_bids - 1, 2))
-			agent1_strat_bids = np.empty((num_bids - 1, num_issues), dtype=object)
-			agent1_y = np.full((num_bids - 1), agent1_label)
-			agent2_strat_utilities = np.empty((num_bids - 1, 2))
-			agent2_strat_bids = np.empty((num_bids - 1, num_issues), dtype=object)
-			agent2_y = np.full((num_bids - 1), agent2_label)
-		
-			for index, bid in enumerate(data['bids']):
-				if index >= num_bids - 1:
-					break
-				agent1_bid = bid['agent1'].split(',')
-				agent1_strat_utilities[index, 0] = computeUtility(agent1_bid, utility1)
-				agent1_strat_utilities[index, 1] = computeUtility(agent1_bid, utility2)
-				agent1_strat_bids[index, :] = agent1_bid
-
-				agent2_bid = bid['agent2'].split(',')
-				agent2_strat_utilities[index, 0] = computeUtility(agent2_bid, utility2)
-				agent2_strat_utilities[index, 1] = computeUtility(agent2_bid, utility1)
-				agent2_strat_bids[index, :] = agent2_bid
-
-			X_bids = np.append(X_bids, agent1_strat_bids, axis=0) if len(X_bids) else agent1_strat_bids
-			X_bids = np.append(X_bids, agent2_strat_bids, axis=0)
-
-			X = np.append(X, agent1_strat_utilities, axis=0) if len(X) else agent1_strat_utilities
-			X = np.append(X, agent2_strat_utilities, axis=0)
-
-			y = np.append(y, agent1_y, axis=0) if len(y) else agent1_y
-			y = np.append(y, agent2_y, axis=0)
-
-			lengths.append(index)
-			lengths.append(index)
-
-	# One hot encode the categorical bids
-	one_hot_enc = OneHotEncoder(categories=issues)
-	X_bids = one_hot_enc.fit_transform(X_bids).toarray()
-		
-	# Append the feature matrices
-	X = np.append(X, X_bids, axis=1)
-		
-	# Label encode the ground truth labels
-	label_enc = LabelEncoder()
-	label_enc.classes_ = labels
-	y = label_enc.fit_transform(y)
-	return (X, y, lengths, label_enc)
 		
 # receives issues dictionary from JSON and sets it up for Scikit-learn one hot encoder
+def firstColumn(array):
+	newArray = []
+	for i in range(0, len(array)):
+		newArray.append(array[i][0])
+	newArray = np.reshape(newArray, (-1, 1))
+	return newArray
+
+
 def setupIssues(issues):
 	categories = []
 	for key in sorted(issues.keys()):
 		categories.append(issues[key])
 	return categories
 
+def setupLabels(labels):
+	categories = []
+	for cat in sorted(labels):
+		categories.append(cat)
+	return [categories]
+
 def main():
 
-	# k-fold cross validation
-	os.chdir("./train")
-	files = []
-	for f in glob.glob("*.json"):
-		files.append(f)
-	for f in files:
+	if sys.argv[1] == "train":
 
-		(X, y, length, label_enc) = loadTrainingData("train", f)
-		# Use one hot encoder
-		# print(X)
-		# print(y)
-		# print(length)
-		# Normalize
+		train_directory = sys.argv[2]
+		X0, X1, X2, X3 = loadData(train_directory)
+
+		hmm0 = ExHMM()
+		e0, t0, s0 = hmm0.train_hmm(X0, 1000, np.full((len(X0)), 1))
+		with open('intermediate/e0.txt', 'wb') as f:
+			for line in e0:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/t0.txt', 'wb') as f:
+			for line in t0:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/s0.txt', 'wb') as f:
+			for line in s0:
+				np.savetxt(f, line, fmt='%.8f')
+
+		hmm1 = ExHMM()
+		e1, t1, s1 = hmm1.train_hmm(X1, 1000, np.full((len(X1)), 1))
+		with open('intermediate/e1.txt', 'wb') as f:
+			for line in e1:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/t1.txt', 'wb') as f:
+			for line in t1:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/s1.txt', 'wb') as f:
+			for line in s1:
+				np.savetxt(f, line, fmt='%.8f')
+
+		hmm2 = ExHMM()
+		e2, t2, s2 = hmm2.train_hmm(X2, 1000, np.full((len(X2)), 1))
+		with open('intermediate/e2.txt', 'wb') as f:
+			for line in e2:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/t2.txt', 'wb') as f:
+			for line in t2:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/s2.txt', 'wb') as f:
+			for line in s2:
+				np.savetxt(f, line, fmt='%.8f')
+
+		hmm3 = ExHMM()
+		e3, t3, s3 = hmm3.train_hmm(X3, 1000, np.full((len(X3)), 1))
+		with open('intermediate/e3.txt', 'wb') as f:
+			for line in e3:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/t3.txt', 'wb') as f:
+			for line in t3:
+				np.savetxt(f, line, fmt='%.8f')
+		with open('intermediate/s3.txt', 'wb') as f:
+			for line in s3:
+				np.savetxt(f, line, fmt='%.8f')
+
+
+		print "TRAINING DONE"
+	elif sys.argv[1] == "test":
+
+		with open('intermediate/e0.txt', 'rb') as f:
+			e0 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/t0.txt', 'rb') as f:
+			t0 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/s0.txt', 'rb') as f:
+			s0 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/e1.txt', 'rb') as f:
+			e1 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/t1.txt', 'rb') as f:
+			t1 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/s1.txt', 'rb') as f:
+			s1 = np.asmatrix(np.loadtxt(f))
+
+		with open('intermediate/e2.txt', 'rb') as f:
+			e2 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/t2.txt', 'rb') as f:
+			t2 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/s2.txt', 'rb') as f:
+			s2 = np.asmatrix(np.loadtxt(f))
+
+		with open('intermediate/e3.txt', 'rb') as f:
+			e3 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/t3.txt', 'rb') as f:
+			t3 = np.asmatrix(np.loadtxt(f))
+		with open('intermediate/s3.txt', 'rb') as f:
+			s3 = np.asmatrix(np.loadtxt(f))
+
+		hmm0test = ExHMM(s0, t0, e0)
+		hmm1test = ExHMM(s1, t1, e1)
+		hmm2test = ExHMM(s2, t2, e2)
+		hmm3test = ExHMM(s3, t3, e3)
+
+		test_directory = sys.argv[2]
+		test_file = sys.argv[3]
+		A, B = testData(test_directory + "/" + test_file)
 
 		# Input into HMM
-		hmm = ExtHMM()
-		hmm.fit(X, y, [length])
+		catA0 = hmm0test.forward_algo(A)
+		catB0 = hmm0test.forward_algo(B)
+
+		catA1 = hmm1test.forward_algo(A)
+		catB1 = hmm1test.forward_algo(B)
+
+		catA2 = hmm2test.forward_algo(A)
+		catB2 = hmm2test.forward_algo(B)
+
+		catA3 = hmm3test.forward_algo(A)
+		catB3 = hmm3test.forward_algo(B)
+
+		Asum = catA0 + catA1 + catA2 + catA3
+		Bsum = catB0 + catB1 + catB2 + catB3
+
+		print
+		print "A is conceder", catA0 / Asum
+		print "A is random", catA1 / Asum
+		print "A is hardheaded", catA2 / Asum
+		print "A is tft", catA3 / Asum
+		print "B is conceder", catB0 / Bsum
+		print "B is random", catB1 / Bsum
+		print "B is hardheaded", catB2 / Bsum
+		print "B is tft", catB3 / Bsum
+		print
+
+
+
+	########################## FOR TESTING #############################
+
+	# # k-fold cross validation
+	# os.chdir("./train")
+	# files = []
+	# for f in glob.glob("*.json"):
+	# 	files.append(f)
+	# for f in files:
+    #
+	# 	X0, X1, X2, X3 = loadData("./train", f)
+	# 	A, B = testData(f)
+	# 	# Use one hot encoder
+	# 	# print(X)
+	# 	# print(y)
+	# 	# print(length)
+	# 	# Normalize
+    #
+	# 	# Input into HMM
+	# 	hmm0 = ExHMM()
+	# 	e0, t0, s0 = hmm0.train_hmm(X0, 1000, np.full((len(X0)), 1))
+	# 	hmm0test = ExHMM(s0, t0, e0)
+	# 	catA0 = hmm0test.forward_algo(A)
+	# 	catB0 = hmm0test.forward_algo(B)
+    #
+	# 	hmm1 = ExHMM()
+	# 	e1, t1, s1 = hmm1.train_hmm(X1, 1000, np.full((len(X1)), 1))
+	# 	hmm1test = ExHMM(s1, t1, e1)
+	# 	catA1 = hmm1test.forward_algo(A)
+	# 	catB1 = hmm1test.forward_algo(B)
+    #
+	# 	hmm2 = ExHMM()
+	# 	e2, t2, s2 = hmm2.train_hmm(X2, 1000, np.full((len(X2)), 1))
+	# 	hmm2test = ExHMM(s2, t2, e2)
+	# 	catA2 = hmm2test.forward_algo(A)
+	# 	catB2 = hmm2test.forward_algo(B)
+    #
+	# 	hmm3 = ExHMM()
+	# 	e3, t3, s3 = hmm3.train_hmm(X3, 1000, np.full((len(X3)), 1))
+	# 	hmm3test = ExHMM(s3, t3, e3)
+	# 	catA3 = hmm3test.forward_algo(A)
+	# 	catB3 = hmm3test.forward_algo(B)
+    #
+	# 	Asum = catA0 + catA1 + catA2 + catA3
+	# 	Bsum = catB0 + catB1 + catB2 + catB3
+    #
+	# 	print f
+	# 	print "A is conceder", catA0/Asum
+	# 	print "A is random", catA1/Asum
+	# 	print "A is hardheaded", catA2/Asum
+	# 	print "A is tft", catA3/Asum
+	# 	print "B is conceder", catB0 / Bsum
+	# 	print "B is random", catB1 / Bsum
+	# 	print "B is hardheaded", catB2 / Bsum
+	# 	print "B is tft", catB3 / Bsum
+	# 	print
+
+
+
+		# hmm = seqlearn.hmm.MultinomialHMM()
+		# print len(X)
+		# print len(y)
+		# print "X", X
+		# print "y", y
+		# print "length", length
+		# hmm.fit(X, y, [length])
 
 		# without directory because of changed dir in
-		(T, Tlength) = loadTestData(f)
-		classes = hmm.predict(T, Tlength)
+		# (T, Tlength) = loadTestData(f)
+		# classes = hmm.predict(T, Tlength)
+		# print "file_name:", f
 
+		# print "agent1:"
+		# count1 = [0.0, 0.0, 0.0, 0.0]
+		# for i in range(0, len(classes)/2):
+		# 	count1[classes[i]] += 1
+		# for i in range(0, len(label_enc.classes_)):
+		# 	count1[i] = round(count1[i] * 200.0 / len(classes), 3)
+		# 	print(label_enc.classes_[i], count1[i])
+        #
+		# # print("CLASSES", classes)
+		# # print(len(classes))
+		# print "agent2:"
+		# count2 = [0.0, 0.0, 0.0, 0.0]
+		# for i in range(len(classes)/2, len(classes)):
+		# 	count2[classes[i]] += 1
+		# print(count2)
+		# for i in range(0, len(label_enc.classes_)):
+		# 	count2[i] = round(count2[i] * 200.0 / len(classes), 3)
+		# 	print(label_enc.classes_[i], count2[i])
+		# print
 
-		print "file_name:", f
-		print "agent1:"
-		count1 = [0.0, 0.0, 0.0, 0.0]
-		for i in range(0, len(classes)/2):
-			count1[classes[i]] += 1
-		for i in range(0, len(count1)):
-			count1[i] = round(count1[i] * 200.0 / len(classes), 3)
-			print(label_enc.classes_[i], count1[i])
-
-		# print("CLASSES", classes)
-		# print(len(classes))
-		print "agent2:"
-		count2 = [0.0, 0.0, 0.0, 0.0]
-		for i in range(len(classes)/2, len(classes)):
-			count2[classes[i]] += 1
-		print(count2)
-		for i in range(0, len(count2)):
-			count2[i] = round(count2[i] * 200.0 / len(classes), 3)
-			print(label_enc.classes_[i], count2[i])
-		print
-   
 
 if __name__ == "__main__":
-    main()
+	main()
