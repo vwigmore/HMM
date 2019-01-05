@@ -6,6 +6,7 @@ import csv
 from ExHMM import ExHMM
 from UtilityFunction import *
 from EasyBid import *
+import pickle
 
 # Hardcoded set of possible strategy labels
 labels = ["conceder", "random", "hardheaded", "tft"]
@@ -144,88 +145,37 @@ def main():
 		X0, X1, X2, X3 = loadData(train_directory)
 
 		hmm0 = ExHMM()
-		e0, t0, s0 = hmm0.train_hmm(X0, 1000, np.full((len(X0)), 1))
-		with open('intermediate/e0.txt', 'wb') as f:
-			for line in e0:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/t0.txt', 'wb') as f:
-			for line in t0:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/s0.txt', 'wb') as f:
-			for line in s0:
-				np.savetxt(f, line, fmt='%.8f')
+		hmm0.train_hmm(X0, 1000, np.full((len(X0)), 1))
+		with open('intermediate/hmm0.pickle', 'wb') as file:
+			pickle.dump(hmm0, file)
 
 		hmm1 = ExHMM()
-		e1, t1, s1 = hmm1.train_hmm(X1, 1000, np.full((len(X1)), 1))
-		with open('intermediate/e1.txt', 'wb') as f:
-			for line in e1:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/t1.txt', 'wb') as f:
-			for line in t1:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/s1.txt', 'wb') as f:
-			for line in s1:
-				np.savetxt(f, line, fmt='%.8f')
+		hmm1.train_hmm(X1, 1000, np.full((len(X1)), 1))
+		with open('intermediate/hmm1.pickle', 'wb') as file:
+			pickle.dump(hmm1, file)
 
 		hmm2 = ExHMM()
-		e2, t2, s2 = hmm2.train_hmm(X2, 1000, np.full((len(X2)), 1))
-		with open('intermediate/e2.txt', 'wb') as f:
-			for line in e2:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/t2.txt', 'wb') as f:
-			for line in t2:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/s2.txt', 'wb') as f:
-			for line in s2:
-				np.savetxt(f, line, fmt='%.8f')
+		hmm2.train_hmm(X2, 1000, np.full((len(X2)), 1))
+		with open('intermediate/hmm2.pickle', 'wb') as file:
+			pickle.dump(hmm2, file)
 
 		hmm3 = ExHMM()
-		e3, t3, s3 = hmm3.train_hmm(X3, 1000, np.full((len(X3)), 1))
-		with open('intermediate/e3.txt', 'wb') as f:
-			for line in e3:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/t3.txt', 'wb') as f:
-			for line in t3:
-				np.savetxt(f, line, fmt='%.8f')
-		with open('intermediate/s3.txt', 'wb') as f:
-			for line in s3:
-				np.savetxt(f, line, fmt='%.8f')
+		hmm3.train_hmm(X3, 1000, np.full((len(X3)), 1))
+		with open('intermediate/hmm3.pickle', 'wb') as file:
+			pickle.dump(hmm3, file)
 
 
-		print "TRAINING DONE"
+		print("TRAINING DONE")
 	elif sys.argv[1] == "test":
-
-		with open('intermediate/e0.txt', 'rb') as f:
-			e0 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/t0.txt', 'rb') as f:
-			t0 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/s0.txt', 'rb') as f:
-			s0 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/e1.txt', 'rb') as f:
-			e1 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/t1.txt', 'rb') as f:
-			t1 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/s1.txt', 'rb') as f:
-			s1 = np.asmatrix(np.loadtxt(f))
-
-		with open('intermediate/e2.txt', 'rb') as f:
-			e2 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/t2.txt', 'rb') as f:
-			t2 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/s2.txt', 'rb') as f:
-			s2 = np.asmatrix(np.loadtxt(f))
-
-		with open('intermediate/e3.txt', 'rb') as f:
-			e3 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/t3.txt', 'rb') as f:
-			t3 = np.asmatrix(np.loadtxt(f))
-		with open('intermediate/s3.txt', 'rb') as f:
-			s3 = np.asmatrix(np.loadtxt(f))
-
-		hmm0test = ExHMM(s0, t0, e0)
-		hmm1test = ExHMM(s1, t1, e1)
-		hmm2test = ExHMM(s2, t2, e2)
-		hmm3test = ExHMM(s3, t3, e3)
+		
+		with open('intermediate/hmm0.pickle', 'rb') as file:
+			hmm0test = pickle.load(file)
+		with open('intermediate/hmm1.pickle', 'rb') as file:
+			hmm1test = pickle.load(file)
+		with open('intermediate/hmm2.pickle', 'rb') as file:
+			hmm2test = pickle.load(file)
+		with open('intermediate/hmm3.pickle', 'rb') as file:
+			hmm3test = pickle.load(file)
 
 		test_directory = sys.argv[2]
 		test_file = sys.argv[3]
@@ -247,16 +197,16 @@ def main():
 		Asum = catA0 + catA1 + catA2 + catA3
 		Bsum = catB0 + catB1 + catB2 + catB3
 
-		print
-		print "A is conceder", catA0 / Asum
-		print "A is random", catA1 / Asum
-		print "A is hardheaded", catA2 / Asum
-		print "A is tft", catA3 / Asum
-		print "B is conceder", catB0 / Bsum
-		print "B is random", catB1 / Bsum
-		print "B is hardheaded", catB2 / Bsum
-		print "B is tft", catB3 / Bsum
-		print
+		print()
+		print("A is conceder", catA0 / Asum)
+		print("A is random", catA1 / Asum)
+		print("A is hardheaded", catA2 / Asum)
+		print("A is tft", catA3 / Asum)
+		print("B is conceder", catB0 / Bsum)
+		print("B is random", catB1 / Bsum)
+		print("B is hardheaded", catB2 / Bsum)
+		print("B is tft", catB3 / Bsum)
+		print()
 
 
 
