@@ -1,4 +1,3 @@
-import operator
 
 # Normalize the utility function dictionary
 def normalizeUtilityFunction(utility_function):

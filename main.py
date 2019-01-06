@@ -1,8 +1,7 @@
 import json
 import sys
 import numpy as np
-import glob, os
-import csv
+import os
 from ExHMM import ExHMM
 from UtilityFunction import *
 from EasyBid import *
