@@ -1,4 +1,2 @@
-cython
-sklearn
-seqlearn
+numpy
 hidden_markov
