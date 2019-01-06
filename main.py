@@ -145,29 +145,28 @@ def main():
 		X0, X1, X2, X3 = loadData(train_directory)
 
 		hmm0 = ExHMM()
-		hmm0.train_hmm(X0, 1000, np.full((len(X0)), 1))
+		hmm0.train_hmm(X0, 100, np.full((len(X0)), 1))
 		with open('intermediate/hmm0.pickle', 'wb') as file:
 			pickle.dump(hmm0, file)
 
 		hmm1 = ExHMM()
-		hmm1.train_hmm(X1, 1000, np.full((len(X1)), 1))
+		hmm1.train_hmm(X1, 100, np.full((len(X1)), 1))
 		with open('intermediate/hmm1.pickle', 'wb') as file:
 			pickle.dump(hmm1, file)
 
 		hmm2 = ExHMM()
-		hmm2.train_hmm(X2, 1000, np.full((len(X2)), 1))
+		hmm2.train_hmm(X2, 100, np.full((len(X2)), 1))
 		with open('intermediate/hmm2.pickle', 'wb') as file:
 			pickle.dump(hmm2, file)
 
 		hmm3 = ExHMM()
-		hmm3.train_hmm(X3, 1000, np.full((len(X3)), 1))
+		hmm3.train_hmm(X3, 100, np.full((len(X3)), 1))
 		with open('intermediate/hmm3.pickle', 'wb') as file:
 			pickle.dump(hmm3, file)
 
-
 		print("TRAINING DONE")
 	elif sys.argv[1] == "test":
-		
+
 		with open('intermediate/hmm0.pickle', 'rb') as file:
 			hmm0test = pickle.load(file)
 		with open('intermediate/hmm1.pickle', 'rb') as file:
@@ -209,14 +208,12 @@ def main():
 		print()
 
 
-
 	########################## FOR TESTING #############################
-
+	########## Comment above if-else block in main method when testing ##########
 	# # k-fold cross validation
-	# os.chdir("./train")
 	# files = []
-	# for f in glob.glob("*.json"):
-	# 	files.append(f)
+	# for f in os.listdir("./train"):
+	# 	files.append("./train/" + f)
 	# for f in files:
     #
 	# 	X0, X1, X2, X3 = loadData("./train", f)
@@ -265,41 +262,7 @@ def main():
 	# 	print "B is hardheaded", catB2 / Bsum
 	# 	print "B is tft", catB3 / Bsum
 	# 	print
-
-
-
-		# hmm = seqlearn.hmm.MultinomialHMM()
-		# print len(X)
-		# print len(y)
-		# print "X", X
-		# print "y", y
-		# print "length", length
-		# hmm.fit(X, y, [length])
-
-		# without directory because of changed dir in
-		# (T, Tlength) = loadTestData(f)
-		# classes = hmm.predict(T, Tlength)
-		# print "file_name:", f
-
-		# print "agent1:"
-		# count1 = [0.0, 0.0, 0.0, 0.0]
-		# for i in range(0, len(classes)/2):
-		# 	count1[classes[i]] += 1
-		# for i in range(0, len(label_enc.classes_)):
-		# 	count1[i] = round(count1[i] * 200.0 / len(classes), 3)
-		# 	print(label_enc.classes_[i], count1[i])
-        #
-		# # print("CLASSES", classes)
-		# # print(len(classes))
-		# print "agent2:"
-		# count2 = [0.0, 0.0, 0.0, 0.0]
-		# for i in range(len(classes)/2, len(classes)):
-		# 	count2[classes[i]] += 1
-		# print(count2)
-		# for i in range(0, len(label_enc.classes_)):
-		# 	count2[i] = round(count2[i] * 200.0 / len(classes), 3)
-		# 	print(label_enc.classes_[i], count2[i])
-		# print
+	########################## FOR TESTING #############################
 
 
 if __name__ == "__main__":
